@@ -1,5 +1,38 @@
 from cmd_defs import *
 from enum import IntEnum, Flag, auto
+import time
+from math import fabs
+
+
+_HUMAN_READABLE_LUX = {
+    0: 'Ideal black body',
+    1e-6: 'Absolute threshold of vision',
+    0.0004: 'Darkest sky',
+    0.001: 'Night sky',
+    0.0014: 'Typical photographic scene lit by full moon',
+    0.005: 'Approximate scotopic/mesopic threshold',
+    0.04: 'Phosphorescent markings on a watch dial after 1h in the dark',
+    2: 'Floodlit buildings, monuments, and fountains',
+    5: 'Approximate mesopic/photopic threshold',
+    25: 'Typical photographic scene at sunrise or sunset',
+    30: 'Green electroluminescent source',
+    55: 'Standard SMPTE cinema screen luminance',
+    80: 'Monitor white in the sRGB reference viewing environment',
+    250: 'Peak luminance of a typical LCD monitor',
+    700: 'Typical photographic scene on overcast day',
+    2000: 'Average cloudy sky',
+    2500: 'Moon surface',
+    5000: 'Typical photographic scene in full sunlight',
+    7000: 'Average clear sky',
+    1e4: 'White illuminated cloud',
+    1.2e4: 'Fluorescent lamp',
+    7.5e4: 'Low pressure sodium-vapor lamp',
+    1.3e5: 'Frosted incandescent light bulb',
+    6e5: 'Solar disk at horizon',
+    7e6: 'Filament of a clear incandescent lamp',
+    1e8: 'Possible retinal damage',
+    1e9: 'Solar disk at noon'
+}
 
 
 class PowerStatus(IntEnum):
@@ -18,6 +51,12 @@ class ThresholdEvent(Flag):
     BOTH = LOW | HIGH
 
 
+class SamplingPerformance(Enum):
+    UPPER_END = auto()
+    SWEET = auto()
+    LOWER_END = auto()
+
+
 class VEML7700Controller:
 
     MAX_RESOLUTION_LUX = 0.0036      # At 800ms integration time, 2x gain
@@ -27,11 +66,19 @@ class VEML7700Controller:
     MIN_INTEGRATION_TIME = ALSIntegrationTime.IT_25MS.friendly_value
     MAX_INTEGRATION_TIME = ALSIntegrationTime.IT_800MS.friendly_value
     MIN_POWER_SAVING_REFRESH_TIME_OVERHEAD_MS = 500
+    MAX_OUTPUT = 0xFFFF
+    HIGH_LUX_THRESHOLD = 100.
+
+    @staticmethod
+    def high_lux_correction_formula(x):
+        # Yes python does the power before the multiplication
+        return 6.0135e-13 * x ** 4 - 9.3924e-09 * x ** 3 + 8.1488e-5 * x ** 2 + 1.0023 * x
+
 
     @property
     def estimated_refresh_time(self):
         if self.power_status is PowerStatus.PWR_ON or self.power_status is PowerStatus.PWR_OFF:
-            return float('inf')
+            return self.integration_time
         power_scale = 1 << (self.power_status.value - 1)
         return self.__class__.MIN_POWER_SAVING_REFRESH_TIME_OVERHEAD_MS * power_scale + self.integration_time
 
@@ -49,7 +96,10 @@ class VEML7700Controller:
 
     @property
     def lux(self):
-        return self.output * self.lux_resolution
+        noncorrected_lux = self.output * self.lux_resolution
+        if noncorrected_lux > self.__class__.HIGH_LUX_THRESHOLD:
+            return self.__class__.high_lux_correction_formula(noncorrected_lux)
+        return noncorrected_lux
 
     def refresh_lux(self):
         self.refresh()
@@ -58,6 +108,41 @@ class VEML7700Controller:
     @property
     def threshold_event(self):
         return self._threshold_event
+
+    @property
+    def sampling_performance(self):
+        if self.output < 100 and \
+                (self.gain < self.__class__.MAX_GAIN or self.integration_time < self.__class__.MAX_INTEGRATION_TIME):
+            return SamplingPerformance.LOWER_END
+        elif self.output > 10000 and \
+                (self.gain > self.__class__.MIN_GAIN or self.integration_time > self.__class__.MIN_INTEGRATION_TIME):
+            return SamplingPerformance.UPPER_END
+        return SamplingPerformance.SWEET
+
+    def calibrate(self):
+        self.refresh()
+        while self.sampling_performance is not SamplingPerformance.SWEET:
+            if self.sampling_performance is SamplingPerformance.UPPER_END:
+                if self.gain > self.__class__.MIN_GAIN:
+                    self.decrease_gain()
+                elif self.integration_time > self.__class__.MIN_INTEGRATION_TIME:
+                    self.decrease_integration_time()
+                else:
+                    break  # No can do
+            elif self.sampling_performance is SamplingPerformance.LOWER_END:
+                if self.gain < self.__class__.MAX_GAIN:
+                    self.increase_gain()
+                elif self.integration_time < self.__class__.MAX_INTEGRATION_TIME:
+                    self.increase_integration_time()
+                else:
+                    break  # No can do
+            else:
+                break  # Wat?
+            self.refresh()
+
+    @property
+    def human_readable_lux(self):
+        return _HUMAN_READABLE_LUX.get(min(_HUMAN_READABLE_LUX.keys(), key=lambda val: fabs(val - self.lux)))
 
     def poll_threshold_event(self):
         if not self.threshold_enabled:
@@ -73,14 +158,6 @@ class VEML7700Controller:
         elif status is ThresholdInterrupt.INT_TH_NONE:
             self._threshold_event = ThresholdEvent.NONE
         return self._threshold_event
-
-    @property
-    def is_overflowing(self):
-        return self.output >= 0xFFFF
-
-    @property
-    def is_underflowing(self):
-        return self.output <= 0x0
 
     def increase_gain(self):
         if self.gain < self.__class__.MAX_GAIN:
@@ -191,7 +268,12 @@ class VEML7700Controller:
     def white_output(self):
         return self._white_output
 
-    def refresh(self, refresh_output=True, refresh_white_output=False):
+    def refresh(self, refresh_output=True, refresh_white_output=False, cycle_power=True, wait_sampling=True):
+        if cycle_power and self.power_status is PowerStatus.PWR_ON or self.power_status is PowerStatus.PWR_OFF:
+            self.power_status = PowerStatus.PWR_OFF
+            self.power_status = PowerStatus.PWR_ON
+        if wait_sampling:
+            time.sleep(self.estimated_refresh_time / 1000.)
         if refresh_output:
             self._get_als_output()
         if refresh_white_output:
