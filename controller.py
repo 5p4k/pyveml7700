@@ -74,7 +74,6 @@ class VEML7700Controller:
         # Yes python does the power before the multiplication
         return 6.0135e-13 * x ** 4 - 9.3924e-09 * x ** 3 + 8.1488e-5 * x ** 2 + 1.0023 * x
 
-
     @property
     def estimated_refresh_time(self):
         if self.power_status is PowerStatus.PWR_ON or self.power_status is PowerStatus.PWR_OFF:
@@ -100,10 +99,6 @@ class VEML7700Controller:
         if noncorrected_lux > self.__class__.HIGH_LUX_THRESHOLD:
             return self.__class__.high_lux_correction_formula(noncorrected_lux)
         return noncorrected_lux
-
-    def refresh_lux(self):
-        self.refresh()
-        return self.lux
 
     @property
     def threshold_event(self):
