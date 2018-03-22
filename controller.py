@@ -1,4 +1,4 @@
-from cmd_defs import *
+from .cmd_defs import *
 from enum import IntEnum, Flag, auto
 import time
 from math import fabs
