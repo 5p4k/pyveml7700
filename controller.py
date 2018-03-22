@@ -115,17 +115,22 @@ class VEML7700Controller:
         return SamplingPerformance.SWEET
 
     def calibrate(self):
+        _DEFAULT_INTEGRATION_TIME = 100
         self.refresh()
         while self.sampling_performance is not SamplingPerformance.SWEET:
             if self.sampling_performance is SamplingPerformance.UPPER_END:
-                if self.gain > self.__class__.MIN_GAIN:
+                if self.integration_time > _DEFAULT_INTEGRATION_TIME:
+                    self.decrease_integration_time()
+                elif self.gain > self.__class__.MIN_GAIN:
                     self.decrease_gain()
                 elif self.integration_time > self.__class__.MIN_INTEGRATION_TIME:
                     self.decrease_integration_time()
                 else:
                     break  # No can do
             elif self.sampling_performance is SamplingPerformance.LOWER_END:
-                if self.gain < self.__class__.MAX_GAIN:
+                if self.integration_time < _DEFAULT_INTEGRATION_TIME:
+                    self.increase_integration_time()
+                elif self.gain < self.__class__.MAX_GAIN:
                     self.increase_gain()
                 elif self.integration_time < self.__class__.MAX_INTEGRATION_TIME:
                     self.increase_integration_time()
