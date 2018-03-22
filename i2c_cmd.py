@@ -18,5 +18,5 @@ class Command:
 
     def __init__(self, code=None, payload=None, direction=None):
         self.code = code
-        self.payload = None
-        self.direction = None
+        self.payload = payload
+        self.direction = direction
