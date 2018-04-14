@@ -102,7 +102,7 @@ class VEML7700Controller:
         return noncorrected_lux
 
     @property
-    def threshold_event(self):
+    def last_threshold_event(self):
         return self._threshold_event
 
     @property
