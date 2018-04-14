@@ -346,6 +346,6 @@ class VEML7700Controller:
         self._power_saving = PowerSavingToggle.PSM_DISABLE
         self._low_threshold = None
         self._high_threshold = None
-        self._als_output = None
-        self._white_output = None
-        self._threshold_event = None
+        self._als_output = -1
+        self._white_output = -1
+        self._threshold_event = ThresholdEvent.NONE
