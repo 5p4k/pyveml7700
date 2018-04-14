@@ -1,5 +1,5 @@
-from .cmd_defs import *
-from enum import IntEnum, Flag, auto
+from cmd_defs import *
+from enum import IntEnum
 import time
 from math import fabs
 
@@ -44,7 +44,7 @@ class PowerStatus(IntEnum):
     PWR_OFF = 5
 
 
-class ThresholdEvent(Flag):
+class ThresholdEvent(IntEnum):
     NONE = 0
     LOW = 1
     HIGH = 2
@@ -52,9 +52,9 @@ class ThresholdEvent(Flag):
 
 
 class SamplingPerformance(Enum):
-    UPPER_END = auto()
-    SWEET = auto()
-    LOWER_END = auto()
+    UPPER_END = 'upper_end'
+    SWEET = 'sweet'
+    LOWER_END = 'lower_end'
 
 
 class VEML7700Controller:

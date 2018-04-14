@@ -1,5 +1,5 @@
 from enum import Enum
-from .i2c_cmd import Command, Direction
+from i2c_cmd import Command, Direction
 from math import isclose
 
 
