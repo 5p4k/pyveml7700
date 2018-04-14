@@ -1,8 +1,18 @@
-from cmd_defs import *
+from .cmd_defs import *
 from enum import IntEnum
 import time
 from math import fabs
-import smbus2
+
+
+class _DummyBus:
+    def __init__(self, _):
+        pass
+
+
+try:
+    from smbus2 import SMBus as _Bus
+except ImportError:
+    _Bus = _DummyBus
 
 
 _HUMAN_READABLE_LUX = {
@@ -345,8 +355,8 @@ class VEML7700Controller:
         self._white_output = cmd_get_white_channel_output_data(cmd(self._bus, DEVICE_ADDRESS))
 
     def __init__(self, bus):
-        if not isinstance(bus, smbus2.SMBus):
-            bus = smbus2.SMBus(bus)
+        if not (_Bus is _DummyBus or isinstance(bus, _Bus)):
+            bus = _Bus(bus)
         self._bus = bus
         self._gain = ALSGain.GAIN_UNIT
         self._integration_time = ALSIntegrationTime.IT_100MS
