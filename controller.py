@@ -149,7 +149,7 @@ class VEML7700Controller:
         if not self.threshold_enabled:
             return None
         cmd = cmd_get_interrupt_status()
-        status = cmd_get_interrupt_status(cmd())
+        status = cmd_get_interrupt_status(cmd(self._bus, DEVICE_ADDRESS))
         if status is ThresholdInterrupt.INT_TH_BOTH:
             self._threshold_event = ThresholdEvent.BOTH
         elif status is ThresholdInterrupt.INT_TH_HIGH:
@@ -319,11 +319,11 @@ class VEML7700Controller:
 
     def _get_als_output(self):
         cmd = cmd_get_als_high_resolution_output_data()
-        self._als_output = cmd_get_als_high_resolution_output_data(cmd())
+        self._als_output = cmd_get_als_high_resolution_output_data(cmd(self._bus, DEVICE_ADDRESS))
 
     def _get_white_output(self):
         cmd = cmd_get_white_channel_output_data()
-        self._white_output = cmd_get_white_channel_output_data(cmd())
+        self._white_output = cmd_get_white_channel_output_data(cmd(self._bus, DEVICE_ADDRESS))
 
     def __init__(self, bus):
         if not isinstance(bus, smbus2.SMBus):
