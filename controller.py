@@ -2,6 +2,7 @@ from cmd_defs import *
 from enum import IntEnum
 import time
 from math import fabs
+import smbus2
 
 
 _HUMAN_READABLE_LUX = {
@@ -325,6 +326,8 @@ class VEML7700Controller:
         self._white_output = cmd_get_white_channel_output_data(cmd())
 
     def __init__(self, bus):
+        if not isinstance(bus, smbus2.SMBus):
+            bus = smbus2.SMBus(bus)
         self._bus = bus
         self._gain = ALSGain.GAIN_UNIT
         self._integration_time = ALSIntegrationTime.IT_100MS
