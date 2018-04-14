@@ -71,17 +71,17 @@ class ALSIntegrationTime(Enum):
     @property
     def friendly_value(self):
         if self is ALSIntegrationTime.IT_25MS:
-            return 25
+            return 0.025
         if self is ALSIntegrationTime.IT_50MS:
-            return 50
+            return 0.050
         if self is ALSIntegrationTime.IT_100MS:
-            return 100
+            return 0.100
         if self is ALSIntegrationTime.IT_200MS:
-            return 200
+            return 0.200
         if self is ALSIntegrationTime.IT_400MS:
-            return 400
+            return 0.400
         if self is ALSIntegrationTime.IT_800MS:
-            return 800
+            return 0.800
         raise RuntimeError('Unknown instance of enum?')
 
     @staticmethod

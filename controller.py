@@ -66,7 +66,7 @@ class VEML7700Controller:
     MIN_GAIN = ALSGain.GAIN_EIGTH.friendly_value
     MIN_INTEGRATION_TIME = ALSIntegrationTime.IT_25MS.friendly_value
     MAX_INTEGRATION_TIME = ALSIntegrationTime.IT_800MS.friendly_value
-    MIN_POWER_SAVING_REFRESH_TIME_OVERHEAD_MS = 500
+    MIN_POWER_SAVING_REFRESH_TIME_OVERHEAD_S = 0.5
     MAX_OUTPUT = 0xFFFF
     HIGH_LUX_THRESHOLD = 100.
 
@@ -80,7 +80,7 @@ class VEML7700Controller:
         if self.power_status is PowerStatus.PWR_ON or self.power_status is PowerStatus.PWR_OFF:
             return self.integration_time
         power_scale = 1 << (self.power_status.value - 1)
-        return self.__class__.MIN_POWER_SAVING_REFRESH_TIME_OVERHEAD_MS * power_scale + self.integration_time
+        return self.__class__.MIN_POWER_SAVING_REFRESH_TIME_OVERHEAD_S * power_scale + self.integration_time
 
     @property
     def lux_resolution(self):
@@ -116,7 +116,7 @@ class VEML7700Controller:
         return SamplingPerformance.SWEET
 
     def calibrate(self):
-        _DEFAULT_INTEGRATION_TIME = 100
+        _DEFAULT_INTEGRATION_TIME = 0.100
         self.refresh()
         while self.sampling_performance is not SamplingPerformance.SWEET:
             if self.sampling_performance is SamplingPerformance.UPPER_END:
@@ -164,7 +164,7 @@ class VEML7700Controller:
         if self.gain < self.__class__.MAX_GAIN:
             new_gain = self.gain * 2
             # Gain skips 1/2
-            if abs(new_gain - 0.5) < 0.001:
+            if isclose(new_gain, 0.5):
                 new_gain *= 2
             self.gain = new_gain
 
@@ -172,17 +172,17 @@ class VEML7700Controller:
         if self.gain > self.__class__.MIN_GAIN:
             new_gain = self.gain / 2
             # Gain skips 1/2
-            if abs(new_gain - 0.5) < 0.001:
+            if isclose(new_gain, 0.5):
                 new_gain /= 2
             self.gain = new_gain
 
     def increase_integration_time(self):
         if self.integration_time < self.__class__.MAX_INTEGRATION_TIME:
-            self.integration_time *= 2
+            self.integration_time *= 2.
 
     def decrease_integration_time(self):
         if self.integration_time > self.__class__.MIN_INTEGRATION_TIME:
-            self.integration_time /= 2
+            self.integration_time /= 2.
 
     @property
     def threshold_enabled(self):
@@ -282,7 +282,7 @@ class VEML7700Controller:
             self.power_status = PowerStatus.PWR_OFF
             self.power_status = PowerStatus.PWR_ON
         if wait_sampling:
-            time.sleep(self.estimated_refresh_time / 1000.)
+            time.sleep(self.estimated_refresh_time)
         if refresh_output:
             self._get_als_output()
         if refresh_white_output:
