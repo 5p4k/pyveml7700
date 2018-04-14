@@ -162,11 +162,19 @@ class VEML7700Controller:
 
     def increase_gain(self):
         if self.gain < self.__class__.MAX_GAIN:
-            self.gain *= 2
+            new_gain = self.gain * 2
+            # Gain skips 1/2
+            if abs(new_gain - 0.5) < 0.001:
+                new_gain *= 2
+            self.gain = new_gain
 
     def decrease_gain(self):
         if self.gain > self.__class__.MIN_GAIN:
-            self.gain /= 2
+            new_gain = self.gain / 2
+            # Gain skips 1/2
+            if abs(new_gain - 0.5) < 0.001:
+                new_gain /= 2
+            self.gain = new_gain
 
     def increase_integration_time(self):
         if self.integration_time < self.__class__.MAX_INTEGRATION_TIME:
