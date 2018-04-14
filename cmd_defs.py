@@ -135,7 +135,7 @@ class ALSPersistence(Enum):
             return ALSPersistence.PERS_4
         if isclose(persistence, 8):
             return ALSPersistence.PERS_8
-        raise ValueError('Cannot interpret %s as a persistence value; valid values: 1, 2, 4, 8.' % str(gain))
+        raise ValueError('Cannot interpret %s as a persistence value; valid values: 1, 2, 4, 8.' % str(persistence))
 
 
 @bitpack(1, 1)
@@ -257,7 +257,7 @@ class ThresholdInterrupt(Enum):
 
 
 def cmd_set_configuration_register(als_gain=ALSGain.GAIN_UNIT, als_integration_time=ALSIntegrationTime.IT_100MS,
-                                   als_persistence=ALSPersistence.PERS_ONE, als_interrupt=ALSInterrupt.INT_DISABLE,
+                                   als_persistence=ALSPersistence.PERS_1, als_interrupt=ALSInterrupt.INT_DISABLE,
                                    als_shutdown=ALSShutdown.POWER_ON):
     if not isinstance(als_gain, ALSGain):
         raise ValueError('Gain must be one of the provided values.')
