@@ -184,6 +184,17 @@ class VEML7700Controller:
         if self.integration_time > self.__class__.MIN_INTEGRATION_TIME:
             self.integration_time /= 2.
 
+    def power_on(self):
+        self.power_status = PowerStatus.PWR_ON
+
+    def power_off(self):
+        self.power_status = PowerStatus.PWR_OFF
+
+    def power_save(self, mode=1):
+        if mode == PowerStatus.PWR_ON or mode == PowerStatus.PWR_OFF:
+            raise ValueError('Mode %d is not a power save mode.' % mode)
+        self.power_status = mode
+
     @property
     def threshold_enabled(self):
         return self._interrupt.friendly_value
