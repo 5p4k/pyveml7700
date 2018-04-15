@@ -46,8 +46,8 @@ def main():
     ic.refresh(refresh_white_output=True)
     log(INFO, 'Status: \n' + dump_status(ic))
     log(INFO, 'Light level: ' + ic.human_readable_lux)
-    log(INFO, 'Performing 10 samples.')
-    for _ in range(10):
+    log(INFO, 'Sampling in various modes.')
+    for _ in range(5):
         ic.refresh()
         log(INFO, 'Lux: %f' % ic.lux)
         ic.calibrate()
@@ -55,20 +55,30 @@ def main():
     for mode in range(1, 5):
         log(INFO, 'Entering power save mode %d.' % mode)
         ic.power_save(mode)
-        for _ in range(10):
+        for _ in range(5):
             ic.refresh()
             log(INFO, 'Lux: %f' % ic.lux)
             ic.calibrate()
     ic.power_on()
     log(INFO, 'Waiting for threshold events')
-    ic.threshold_low = 60. / ic.lux_resolution
-    ic.threshold_high = 230. / ic.lux_resolution
+    ic.threshold_low = int(60. / ic.lux_resolution)
+    ic.threshold_high = int(230. / ic.lux_resolution)
     ic.threshold_enabled = True
-    for _  in range(10):
+    for _ in range(5):
         sleep(ic.estimated_refresh_time)
         log(INFO, 'Poll event: {%s}' % str(ic.poll_threshold_event()))
     ic.threshold_enabled = False
     log(INFO, 'Status: \n' + dump_status(ic))
+    log(INFO, 'Continuously calibrating and sampling every second until Ctrl-C.')
+    ic.power_on()
+    while True:
+        try:
+            sleep(1)
+            ic.refresh()
+            ic.calibrate()
+            log(INFO, 'Status: \n' + dump_status(ic))
+        except KeyboardInterrupt:
+            break
     log(INFO, 'Power off.')
     ic.power_off()
 
